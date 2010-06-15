@@ -1,0 +1,6 @@
+div.jsim-mouse {
+    height: 16px;
+    width: 16px;
+    background: transparent url(gpx/mouse.png) no-repeat 0px 0px;
+    position: absolute;
+}

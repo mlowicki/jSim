@@ -1,0 +1,91 @@
+<html>
+    <head>
+        <!-- YUI -->
+        <link type="text/css" rel="stylesheet" href="libs/yui_2.8.1/build/autocomplete/assets/skins/sam/autocomplete.css">
+        <link tpye="text/css" rel="stylesheet" href="jsim/jsim.css">
+ 
+        <script src="libs/yui_2.8.1/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+        <script src="libs/yui_2.8.1/build/datasource/datasource-min.js"></script>
+        <script src="libs/yui_2.8.1/build/animation/animation-min.js"></script>
+        <script src="libs/yui_2.8.1/build/autocomplete/autocomplete-min.js"></script>
+        <!-- own files -->
+        <style type="text/css">
+            #autoComplete { width: 200px; }
+            #search { width: 200px; }
+        </style>
+        <script type="text/javascript" src="jsim/jsim.js"></script>
+        <script type="text/javascript" src="jsim/jsim_utils.js"></script>
+        <script type="text/javascript" src="jsim/jsim_prototypes.js"></script>
+        <script type="text/javascript" src="demo.js"></script>
+        <script type="text/javascript">
+            var countries = [
+                'Poland',
+                'Portugal',
+                'Puerto Rico',
+                'Norway',
+                'USA'
+            ];
+
+            window.addEventListener('load', function() {
+                var oDS = new YAHOO.util.LocalDataSource(countries);
+                oDS.responseSchema = {fields: ['country']};
+                var oAC = new YAHOO.widget.AutoComplete('search',
+                                                    'autoCompleteCnt', oDS);
+                oAC.prehighlightClassName = 'yui-ac-prehighlight';
+                oAC.useShadow = true;
+
+                var input = document.getElementById('search');
+
+                input.addEventListener('keypress', function() {
+                
+                }, false);
+
+                /*
+                var mouse = new jSim.Mouse({});
+                mouse.moveTo({x: 10, y: 10});
+                mouse.center();
+                */
+                var button = document.getElementById('button1');
+                button.addEventListener('click', function() {
+                    document.getElementById('results').innerHTML =
+                                                    'Found 11 results...';
+                }, false);
+                runDemoScene();
+                /*
+                var scene = new jSim.Scene(
+                    mouse.center(),
+                    mouse.click({el: 'search'}),
+                    text({el: 'search', speed: 'normal', text: 'Poland'),
+                    mouse.click({el: 'button1'})
+                    {type: 'text', el: input, interval: 300, text: 'Poland'},
+                    {type: 'click', el: button}
+                );
+                scene.start();
+                return;
+                var pos = button.pos();
+                var anim = new jSim.MoveAnim({
+                    el: cursor.el(), 
+                    to: {
+                        x: pos.x + Math.round(button.offsetWidth/2),
+                        y: pos.y + Math.round(button.offsetHeight/2)
+                    }
+                });
+                anim.start();
+                */
+            }, false);
+        </script>
+    </head>
+    <body class="yui-skin-sam">
+        <div>
+            <label for="search">Enter a country:</label>
+            <div id="autoComplete">
+                <input type="text" id="search">
+                <div id="autoCompleteCnt">
+            </div>
+        </div>
+        <div style="position: absolute; top: 100px; ">
+            <button id="button1">Search</button>
+            <div id="results"></div>
+        </div>
+    </body>
+</html>
