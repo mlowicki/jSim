@@ -121,6 +121,6 @@ jSim.Utils.Interface.ensureImplements = function(object) {
     }
 };
 
-jSim.Action = new jSim.Utils.Interface('Action',
-                                    ['next', 'onEnd']);
+
+jSim.Action = new jSim.Utils.Interface('Action', ['next', 'onEnd']);
 
