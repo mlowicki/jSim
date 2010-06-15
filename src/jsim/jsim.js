@@ -3,12 +3,14 @@
  * @module core
  */
 
+
 /**
  * Global namespace.
  * @class jSim
  * @static
  */
 jSim = {};
+
 
 /**
  * Manage list of actions.
@@ -59,6 +61,7 @@ jSim.Scene.prototype = {
         throw new Error('Not implemented');
     }
 };
+
 
 /**
  * Mouse manager.
@@ -187,14 +190,18 @@ jSim.MoveAnim = function(cfg) {
 };
 
 jSim.MoveAnim.prototype = {
-    onEnd: function(item) {
-        this._onEnd.subscribe(item);
-    },
+    /**
+     * Default step (px).
+     * @property STEP
+     * @type number
+     */
     STEP: 4,
+    /**
+     * Default interval time (millisecond).
+     * @property INTERVAL_TIME
+     * @type number
+     */
     INTERVAL_TIME: 20,
-    el: function() {
-        return this._el;
-    },
     /**
      * Start the animation.
      * @method start
@@ -205,31 +212,23 @@ jSim.MoveAnim.prototype = {
             that = this;
 
         this._interval = setInterval(function() {
-            var newX = that.el().style.left.toFloat() + that.STEP * that._signX,
-                newY = that.el().style.top.toFloat()
+            var newX = that._el.style.left.toFloat() + that.STEP * that._signX,
+                newY = that._el.style.top.toFloat()
                                 + (that._deltaY * ratio) * that._signY;
-            if(that._signX == 1) {
-                if(newX > that._endX) { newX = that._endX; }
-            }
-            else { 
-                if(newX < that._endX) { newX = that._endX; }
-            }
 
-            if(that._signY == 1) {
-                if(newY > that._endY) { newY = that._endY; }
-            }
-            else {
-                if(newY < that._endY) { newY = that._endY; }
-            }
+            if(that._signX == 1 && newX > that._endX) newX = that._endX;
+            else if(that._signX == -1 && newX < that._endX) newX = that._endX;
 
-            that.el().style.left = newX + 'px';
-            that.el().style.top = newY + 'px';
+            if(that._signY == 1 && newY > that._endY) newY = that._endY;
+            else if(that._signY == -1 && newY < that._endY) newY = that._endY;
+
+            that._el.style.left = newX + 'px';
+            that._el.style.top = newY + 'px';
 
             if(newX == that._endX && newY == that._endY) {
                 clearInterval(that._interval);
                 that._onEnd.fire()
             }
-
         }, this.INTERVAL_TIME); 
     },
     /**
@@ -238,8 +237,17 @@ jSim.MoveAnim.prototype = {
      */
     stop: function() {
         clearInterval(this._interval);
+    },
+    /**
+     * Subscribe for the end event.
+     * @method onEnd.
+     * @param {Object} callback
+     */
+    onEnd: function(callback) {
+        this._onEnd.subscribe(callback);
     }
 };
+
 
 /**
  * Class for handling mouse clicks.
@@ -301,6 +309,7 @@ jSim.Click.prototype = {
     }
 };
 
+
 /**
  * Typewriter.
  * @class Typewriter
@@ -311,9 +320,6 @@ jSim.Typewriter = function() {
 };
 
 jSim.Typewriter.prototype = {
-    onEnd: function(item) {
-        this._onEnd.subscribe(item);
-    },
     /**
      * Stop typing.
      * @method stop
@@ -390,6 +396,14 @@ jSim.Typewriter.prototype = {
             );
             el.dispatchEvent(eventObject);
         }, typeInterval);
+    },
+    /**
+     * Add callback for end event.
+     * @method onEnd
+     * @param {Object} item
+     */
+    onEnd: function(callback) {
+        this._onEnd.subscribe(callback);
     }
 };
 
