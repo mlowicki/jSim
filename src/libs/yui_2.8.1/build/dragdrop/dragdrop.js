@@ -811,10 +811,9 @@ YAHOO.util.DragDropMgr = function() {
          * @static
          */
         handleMouseMove: function(e) {
-
             var dc = this.dragCurrent;
-            if (dc) {
 
+            if (dc) {
                 // var button = e.which || e.button;
 
                 // check for IE mouseup outside of page boundary
@@ -833,6 +832,7 @@ YAHOO.util.DragDropMgr = function() {
                 if (!this.dragThreshMet) {
                     var diffX = Math.abs(this.startX - YAHOO.util.Event.getPageX(e));
                     var diffY = Math.abs(this.startY - YAHOO.util.Event.getPageY(e));
+
                     if (diffX > this.clickPixelThresh || 
                                 diffY > this.clickPixelThresh) {
                         this.startDrag(this.startX, this.startY);
@@ -2391,7 +2391,6 @@ YAHOO.util.DragDrop.prototype = {
      * @private
      */
     handleMouseDown: function(e, oDD) {
-
         var button = e.which || e.button;
 
         if (this.primaryButtonOnly && button > 1) {

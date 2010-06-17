@@ -143,6 +143,131 @@ jSim.Mouse.prototype = {
         move.start();
         return this;
     },
+    pos: function(o) {
+        if(o) {
+            this._el.style.top = o.y + 'px'
+            this._el.style.left = o.x + 'px';
+        }
+
+        return {
+            x: this._el.style.left.toInt(),
+            y:  this._el.style.top.toInt()
+        };
+    },
+    /**
+     * Dispatch mouseup event.
+     * TODO: screenX & screenY properties.
+     * @method mouseup
+     * @param {Object} cfg
+     */
+    mouseup: function(cfg) {
+        // check required arguments.
+        if(!(cfg.el instanceof Node)
+            || typeof cfg.x !== 'number'
+            || typeof cfg.y != 'number') {
+            throw new Error('Mouse.mouseup: Three arguments are required - '
+                +'Node and two coordinates');
+        }
+
+        var eventObject = document.createEvent('MouseEvents');
+        eventObject.initMouseEvent('mouseup', true, true, window, 1, cfg.x,
+                    cfg.y, cfg.x, cfg.y, false, false, false, false, 0, null);
+        cfg.el.dispatchEvent(eventObject);
+    },
+    /**
+     * Dispatch mousedown event.
+     * TODO: screenX & screenY properties.
+     * @method mousedown
+     * @param {Object} cfg
+     */
+    mousedown: function(cfg) {
+        // check required arguments.
+        if(!(cfg.el instanceof Node)
+            || typeof cfg.x !== 'number'
+            || typeof cfg.y != 'number') {
+            throw new Error('Mouse.mousedown: Three arguments are required - '
+                + 'Node and two coordinates');
+        }
+
+        var eventObject = document.createEvent('MouseEvents');
+        eventObject.initMouseEvent('mousedown', true, true, window, 1, cfg.x,
+                    cfg.y, cfg.x, cfg.y, false, false, false, false, 0, null);
+        cfg.el.dispatchEvent(eventObject);
+    },
+    /**
+     * Dispatch mousemove event.
+     * TODO: screenX & screenY properties.
+     * @method mousemove
+     * @param {Object} cfg
+     */
+    mousemove: function(cfg) {
+        // check required arguments.
+        if(!(cfg.el instanceof Node)
+            || typeof cfg.x !== 'number'
+            || typeof cfg.y != 'number') {
+            throw new Error('Mouse.mousemove: Three arguments are required - '
+                + 'Node and two coordinates');
+        }
+
+        var eventObject = document.createEvent('MouseEvents');
+        eventObject.initMouseEvent('mousemove', true, true, window, 1, cfg.x,
+                    cfg.y, cfg.x, cfg.y, false, false, false, false, 0, null);
+        this.pos({ // move mouse pointer.
+            x: cfg.x,
+            y: cfg.y
+        });
+
+        cfg.el.dispatchEvent(eventObject);
+    },
+    drag: function(cfg) {
+        if(typeof cfg.el === 'string')
+            cfg.el  = document.getElementById(cfg.el);
+
+        var pos = cfg.el.pos();
+        pos.x += cfg.el.offsetWidth / 2;
+        pos.y += cfg.el.offsetHeight / 2;
+
+        var move = new jSim.MoveAnim({
+            el: this.el(),
+            to: pos
+        });
+
+        var that = this;
+        move.onEnd({
+            fn: function() {
+                that.mousedown({
+                    el: cfg.el,
+                    x: that.pos().x,
+                    y: that.pos().y
+                });
+
+                var x = that.pos().x + 10,
+                    y = that.pos().y + 10;
+
+                that._moveInterval = setInterval(function() {
+                    that.mousemove({
+                        el: cfg.el,
+                        x: x,
+                        y: y
+                    });
+
+                    if(x > 300) {
+                        clearInterval(that._moveInterval);
+                        that.mouseup({
+                            el: cfg.el,
+                            x: that.pos().x,
+                            y: that.pos().y
+                        });
+                    }
+                    x += 10;
+                    y += 10;
+                }, 40);
+            }
+        });
+        move.start();
+
+        return this;
+    },
     /**
      * Subscribe for the end event.
      * @method onEnd.

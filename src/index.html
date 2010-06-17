@@ -8,10 +8,19 @@
         <script src="libs/yui_2.8.1/build/datasource/datasource-min.js"></script>
         <script src="libs/yui_2.8.1/build/animation/animation-min.js"></script>
         <script src="libs/yui_2.8.1/build/autocomplete/autocomplete-min.js"></script>
+        <script src="libs/yui_2.8.1/build/dragdrop/dragdrop.js" ></script>
         <!-- own files -->
         <style type="text/css">
             #autoComplete { width: 200px; }
             #search { width: 200px; }
+            #dd {
+                position: absolute;
+                top: 100px;
+                left: 100px;
+                width: 100px;
+                height: 100px;
+                background-color: red;
+            }
         </style>
         <script type="text/javascript" src="jsim/jsim.js"></script>
         <script type="text/javascript" src="jsim/jsim_utils.js"></script>
@@ -27,6 +36,8 @@
             ];
 
             window.addEventListener('load', function() {
+                var dd = new YAHOO.util.DD('dd');
+
                 var oDS = new YAHOO.util.LocalDataSource(countries);
                 oDS.responseSchema = {fields: ['country']};
                 var oAC = new YAHOO.widget.AutoComplete('search',
@@ -76,6 +87,7 @@
         </script>
     </head>
     <body class="yui-skin-sam">
+        <div id="dd"></div>
         <div>
             <label for="search">Enter a country:</label>
             <div id="autoComplete">
