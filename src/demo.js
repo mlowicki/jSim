@@ -25,7 +25,7 @@ function runDemoScene() {
         name: 'drag&drop demo',
         actions: [
             mouse.center(),
-            mouse.drag({el: 'dd', to: {x: 10, y: 10}})
+            mouse.drag({el: 'dd', to: {x: 500, y: 100}})
         ]
     });
     ddDemo.start();

@@ -82,17 +82,33 @@ jSim.Mouse = function(cfg) {
 
 jSim.Mouse.prototype = {
     /**
-     * Default widget of the node.
+     * Default width of the cursor.
      * @property WIDTH
      * @type number
+     * @default 16
      */
     WIDTH: 16,
     /**
-     * Default height of the node.
+     * Default height of the cursor.
      * @property HEIGHT
      * @type number
+     * @default 16
      */
     HEIGHT: 16,
+    /**
+     * Default step (in pixels) during dragging.
+     * @property DRAG_STEP
+     * @type number
+     * @default 10
+     */
+    DRAG_STEP: 10,
+    /**
+     * Default interval time during dragging.
+     * @property DRAG_INTERVAL
+     * @type number
+     * @default 40
+     */
+    DRAG_INTERVAL: 40,
     /**
      * Return mouse node.
      * @method el
@@ -102,7 +118,7 @@ jSim.Mouse.prototype = {
         return this._el;
     },
     /**
-     * Center the cursor.
+     * Center the mouse cursor.
      * @method center
      */
     center: function() {
@@ -143,6 +159,12 @@ jSim.Mouse.prototype = {
         move.start();
         return this;
     },
+    /**
+     * Set/get position of the mouse cursor.
+     * @method pos
+     * @param {Object} o (optional)
+     * @return {Object}
+     */
     pos: function(o) {
         if(o) {
             this._el.style.top = o.y + 'px'
@@ -219,21 +241,36 @@ jSim.Mouse.prototype = {
 
         cfg.el.dispatchEvent(eventObject);
     },
+    /**
+     * Drag element to a specified coordinates.
+     * @method drag
+     * @param {Object} cfg
+     */
     drag: function(cfg) {
+        if(!cfg.el || !cfg.to)
+            throw new Error('Mouse.drag: element and destination coordinates '
+                + 'are required');
+
         if(typeof cfg.el === 'string')
             cfg.el  = document.getElementById(cfg.el);
 
+        // move cursor to the center of the draggable element.
         var pos = cfg.el.pos();
         pos.x += cfg.el.offsetWidth / 2;
         pos.y += cfg.el.offsetHeight / 2;
 
-        var move = new jSim.MoveAnim({
+        var moveAnim = new jSim.MoveAnim({
             el: this.el(),
             to: pos
         });
 
-        var that = this;
-        move.onEnd({
+        var that = this,
+            xDir = (pos.x < cfg.to.x) ? 1: -1,
+            yDir = (pos.y < cfg.to.y) ? 1: -1,
+            xDelta = Math.abs(pos.x - cfg.to.x),
+            yDelta = Math.abs(pos.y - cfg.to.y);
+
+        moveAnim.onEnd({
             fn: function() {
                 that.mousedown({
                     el: cfg.el,
@@ -241,35 +278,42 @@ jSim.Mouse.prototype = {
                     y: that.pos().y
                 });
 
-                var x = that.pos().x + 10,
-                    y = that.pos().y + 10;
+                var x = that.pos().x,
+                    y = that.pos().y;
 
                 that._moveInterval = setInterval(function() {
-                    that.mousemove({
-                        el: cfg.el,
-                        x: x,
-                        y: y
-                    });
+                    x += xDir * that.DRAG_STEP;
+                    y += yDir * (that.DRAG_STEP / xDelta) * yDelta;
 
-                    if(x > 300) {
+                    if((xDir == 1 && x > cfg.to.x)
+                        || (xDir == -1 && x < cfg.to.x)) x = cfg.to.x;
+                    if((yDir == 1 && y > cfg.to.y)
+                        || (yDir == -1 && y < cfg.to.y)) y = cfg.to.y;
+
+                    if(x == cfg.to.x && y == cfg.to.y) {
                         clearInterval(that._moveInterval);
                         that.mouseup({
                             el: cfg.el,
                             x: that.pos().x,
                             y: that.pos().y
                         });
+                        return;
                     }
-                    x += 10;
-                    y += 10;
-                }, 40);
+
+                    that.mousemove({
+                        el: cfg.el,
+                        x: x,
+                        y: y
+                    });
+                }, that.DRAG_INTERVAL);
             }
         });
-        move.start();
+        moveAnim.start();
 
         return this;
     },
     /**
-     * Subscribe for the end event.
+     * Subscribe for the end action event.
      * @method onEnd.
      * @param {Object} callback
      */
