@@ -21,7 +21,7 @@ function runDemoScene() {
         ]
     });*/
 
-    var ddDemo = scene({
+    ddDemo = scene({
         name: 'drag&drop demo',
         actions: [
             mouse.center(),

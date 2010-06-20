@@ -27,8 +27,8 @@ jSim.Scene = function(cfg) {
     // remember each action. 
     for(var i = 0, len = cfg.actions.length; i < len; i++) {
         var item = cfg.actions[i];
-        // each action must implement Action interface.
-        jSim.Utils.Interface.ensureImplements(item, jSim.Action); 
+        // each action must implement LazyAction interface.
+        jSim.Utils.Interface.ensureImplements(item, jSim.LazyAction);
         this._components.push(item);
     }
 
@@ -50,7 +50,13 @@ jSim.Scene.prototype = {
      * param {Number} index (optional)
      */
     start: function(index) {
-        if(index === undefined) { index=0; }
+        if(this._stop) { // resume action if it was stopped before.
+            this._stop = false;
+            this._curAction.start();
+            return;
+        }
+
+        if(index === undefined) index=0;
 
         if(index > this._components.length-1 || index < 0)
             throw new Error('Scene.start: index must be greater than 0 and '
@@ -65,7 +71,7 @@ jSim.Scene.prototype = {
             });
         }
 
-        if(index === this._components.length - 1) {
+        if(index === this._components.length - 1) { // last action
             var that = this;
             this._components[index].onEnd({
                 fn: that._onEnd.fire,
@@ -73,14 +79,16 @@ jSim.Scene.prototype = {
             });
          }
 
+        this._curAction = this._components[index];
         this._components[index].next();
     },
     /**
      * Stop all actions for the scene.
-     * @method
+     * @method stop
      */
     stop: function() {
-        throw new Error('Not implemented');
+        this._stop = true;
+        this._curAction.stop();
     }
 };
 
@@ -90,7 +98,7 @@ jSim.Scene.prototype = {
  * @class Mouse
  * @constructor
  */
-jSim.Mouse = function(cfg) {
+jSim.Mouse = function(cfg) { // implements Action.
     // create and position mouse cursor.
     this._x = 0;
     this._y = 0;
@@ -264,7 +272,22 @@ jSim.Mouse.prototype = {
         cfg.el.dispatchEvent(eventObject);
     },
     /**
+     * Resume the current action.
+     * @method start
+     */
+    start: function() {
+        this._curAction.start();
+    },
+    /**
+     * Stop the current action.
+     * @method stop
+     */
+    stop: function() {
+        this._curAction.stop();
+    },
+    /**
      * Drag element to a specified coordinates.
+     * TODO: handling stop not only in move animation.
      * @method drag
      * @param {Object} cfg
      */
@@ -285,6 +308,7 @@ jSim.Mouse.prototype = {
             el: this.el(),
             to: pos
         });
+        this._curAction = moveAnim;
 
         var that = this,
             xDir = (pos.x < cfg.to.x) ? 1: -1,
@@ -353,7 +377,7 @@ jSim.Mouse.prototype = {
  * @constructor
  * @param {Object} cfg
  */
-jSim.MoveAnim = function(cfg) {
+jSim.MoveAnim = function(cfg) { // implements Action.
     if(!cfg.el) throw new Error('jSim.MoveAnim: node is required');
     if(!cfg.to) throw new Error(
                         'jSim.MoveAnim: destination coordinates are required');
@@ -400,8 +424,7 @@ jSim.MoveAnim.prototype = {
      * @method start
      */
     start: function() {
-        var counter = 0,
-            ratio = this.STEP / this._deltaX,
+        var ratio = this.STEP / this._deltaX,
             that = this;
 
         this._interval = setInterval(function() {
@@ -422,7 +445,7 @@ jSim.MoveAnim.prototype = {
                 clearInterval(that._interval);
                 that._onEnd.fire()
             }
-        }, this.INTERVAL_TIME); 
+        }, this.INTERVAL_TIME);
     },
     /**
      * Stop the animation.
@@ -603,7 +626,8 @@ jSim.Typewriter.prototype = {
 
 /**
  * Save all method calls in queue and run next one from the queue in the next
- * method.
+ * method. It's used to modify object implementing Action interface to
+ * object implementing LazyAction interface. It's used in scene objects.
  * @class LazyDecorator
  * @constructor
  * @param {Object} cfg;
