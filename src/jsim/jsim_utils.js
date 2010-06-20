@@ -55,9 +55,11 @@ jSim.Utils.Observer.prototype = {
      * @method fire
      */
     fire: function() {
+        var args = Array.apply(null, arguments);
+
         this._items.forEach(
             function(item) {
-                item.fn.apply(item.scope, item.args);
+                item.fn.apply(item.scope, (item.args || []).concat(args));
             }
         );
     }

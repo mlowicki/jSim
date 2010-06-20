@@ -126,20 +126,6 @@ jSim.Mouse.prototype = {
      */
     HEIGHT: 16,
     /**
-     * Default step (in pixels) during dragging.
-     * @property DRAG_STEP
-     * @type number
-     * @default 10
-     */
-    DRAG_STEP: 10,
-    /**
-     * Default interval time during dragging.
-     * @property DRAG_INTERVAL
-     * @type number
-     * @default 40
-     */
-    DRAG_INTERVAL: 40,
-    /**
      * Return mouse node.
      * @method el
      * @return {HtmlElement}
@@ -300,7 +286,9 @@ jSim.Mouse.prototype = {
             cfg.el  = document.getElementById(cfg.el);
 
         // move cursor to the center of the draggable element.
-        var pos = cfg.el.pos();
+        var pos = cfg.el.pos(),
+            that = this;
+
         pos.x += cfg.el.offsetWidth / 2;
         pos.y += cfg.el.offsetHeight / 2;
 
@@ -310,50 +298,45 @@ jSim.Mouse.prototype = {
         });
         this._curAction = moveAnim;
 
-        var that = this,
-            xDir = (pos.x < cfg.to.x) ? 1: -1,
-            yDir = (pos.y < cfg.to.y) ? 1: -1,
-            xDelta = Math.abs(pos.x - cfg.to.x),
-            yDelta = Math.abs(pos.y - cfg.to.y);
-
         moveAnim.onEnd({
             fn: function() {
-                that.mousedown({
-                    el: cfg.el,
-                    x: that.pos().x,
-                    y: that.pos().y
+                var dragAnim = new jSim.MoveAnim({
+                    el: that.el(),
+                    to: cfg.to
+                });
+                that._curAction = dragAnim;
+
+                dragAnim.onStart({
+                    fn: function(x, y) {
+                        that.mousedown({
+                            el: cfg.el,
+                            x: x,
+                            y: y
+                        });
+                    }
                 });
 
-                var x = that.pos().x,
-                    y = that.pos().y;
+                dragAnim.onMove({
+                    fn: function(x, y) {
+                        that.mousemove({
+                            el: cfg.el,
+                            x: x,
+                            y: y
+                        });
+                    }
+                });
 
-                that._moveInterval = setInterval(function() {
-                    x += xDir * that.DRAG_STEP;
-                    y += yDir * (that.DRAG_STEP / xDelta) * yDelta;
-
-                    if((xDir == 1 && x > cfg.to.x)
-                        || (xDir == -1 && x < cfg.to.x)) x = cfg.to.x;
-                    if((yDir == 1 && y > cfg.to.y)
-                        || (yDir == -1 && y < cfg.to.y)) y = cfg.to.y;
-
-                    if(x == cfg.to.x && y == cfg.to.y) {
-                        clearInterval(that._moveInterval);
+                dragAnim.onEnd({
+                    fn: function(x, y) {
                         that.mouseup({
                             el: cfg.el,
-                            x: that.pos().x,
-                            y: that.pos().y
+                            x: x,
+                            y: y
                         });
-
                         that._onEnd.fire();
-                        return;
                     }
-
-                    that.mousemove({
-                        el: cfg.el,
-                        x: x,
-                        y: y
-                    });
-                }, that.DRAG_INTERVAL);
+                });
+                dragAnim.start();
             }
         });
         moveAnim.start();
@@ -383,8 +366,8 @@ jSim.MoveAnim = function(cfg) { // implements Action.
                         'jSim.MoveAnim: destination coordinates are required');
     
     this._el = cfg.el;
-    this._startX = this._el.style.left.toInt();
-    this._startY = this._el.style.top.toInt();
+    this._startX = this._el.style.left.toFloat();
+    this._startY = this._el.style.top.toFloat();
     this._endX = cfg.to.x;
     this._endY = cfg.to.y;
 
@@ -404,6 +387,8 @@ jSim.MoveAnim = function(cfg) { // implements Action.
     }
 
     this._onEnd = new jSim.Utils.Observer;
+    this._onStart = new jSim.Utils.Observer;
+    this._onMove = new jSim.Utils.Observer;
 };
 
 jSim.MoveAnim.prototype = {
@@ -424,13 +409,20 @@ jSim.MoveAnim.prototype = {
      * @method start
      */
     start: function() {
+        var pos = this._el.pos();
+        this._onStart.fire(pos.x, pos.y);
+
         var ratio = this.STEP / this._deltaX,
-            that = this;
+            that = this,
+            overflow = 0;
 
         this._interval = setInterval(function() {
-            var newX = that._el.style.left.toFloat() + that.STEP * that._signX,
-                newY = that._el.style.top.toFloat()
-                                + (that._deltaY * ratio) * that._signY;
+            var newX = that._el.style.left.toFloat() + that.STEP * that._signX;
+
+            overflow += (that._deltaY * ratio) * that._signY;
+            var newY = that._el.style.top.toFloat()
+                                    + Math.abs(overflow.toInt()) * that._signY;
+            overflow = overflow - overflow.toInt();
 
             if(that._signX == 1 && newX > that._endX) newX = that._endX;
             else if(that._signX == -1 && newX < that._endX) newX = that._endX;
@@ -440,10 +432,12 @@ jSim.MoveAnim.prototype = {
 
             that._el.style.left = newX + 'px';
             that._el.style.top = newY + 'px';
+            pos = that._el.pos();
+            that._onMove.fire(pos.x, pos.y);
 
             if(newX == that._endX && newY == that._endY) {
                 clearInterval(that._interval);
-                that._onEnd.fire()
+                that._onEnd.fire(pos.x, pos.y);
             }
         }, this.INTERVAL_TIME);
     },
@@ -461,6 +455,12 @@ jSim.MoveAnim.prototype = {
      */
     onEnd: function(callback) {
         this._onEnd.subscribe(callback);
+    },
+    onStart: function(callback) {
+        this._onStart.subscribe(callback);
+    },
+    onMove: function(callback) {
+        this._onMove.subscribe(callback);
     }
 };
 

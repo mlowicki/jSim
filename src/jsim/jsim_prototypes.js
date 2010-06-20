@@ -46,6 +46,12 @@ if(!String.prototype.toInt) {
     });
 }
 
+if(!Number.prototype.toInt) {
+    Number.method('toInt', function() {
+        return parseInt(this, 10);
+    });
+}
+
 if(!String.prototype.toFloat) {
     String.method('toFloat', function() {
         return parseFloat(this);
@@ -63,7 +69,6 @@ if(!Node.prototype.pos) {
                 y += el.offsetTop;
             } while(el = el.offsetParent)
         }
-
         return {x: x, y: y};
     });
 }
