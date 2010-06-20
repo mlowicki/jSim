@@ -31,9 +31,19 @@ jSim.Scene = function(cfg) {
         jSim.Utils.Interface.ensureImplements(item, jSim.Action); 
         this._components.push(item);
     }
+
+    this._onEnd = new jSim.Utils.Observer;
 };
 
 jSim.Scene.prototype = {
+    /**
+     * Subscribe for the end action event.
+     * @method onEnd.
+     * @param {Object} callback
+     */
+    onEnd: function(callback) {
+        this._onEnd.subscribe(callback);
+    },
     /**
      * Run actions from the particular index or 0 by default.
      * @method start
@@ -41,7 +51,10 @@ jSim.Scene.prototype = {
      */
     start: function(index) {
         if(index === undefined) { index=0; }
-        if(index > this._components.length-1) { return; }
+
+        if(index > this._components.length-1 || index < 0)
+            throw new Error('Scene.start: index must be greater than 0 and '
+                + 'not greater than index of the last item in scene');
 
         this._components[index].onEnd(null); // remove all previous callbacks.
         if(index < this._components.length-1) {
@@ -51,6 +64,15 @@ jSim.Scene.prototype = {
                 args: [index+1]
             });
         }
+
+        if(index === this._components.length - 1) {
+            var that = this;
+            this._components[index].onEnd({
+                fn: that._onEnd.fire,
+                scope: that._onEnd
+            });
+         }
+
         this._components[index].next();
     },
     /**
@@ -297,6 +319,8 @@ jSim.Mouse.prototype = {
                             x: that.pos().x,
                             y: that.pos().y
                         });
+
+                        that._onEnd.fire();
                         return;
                     }
 
